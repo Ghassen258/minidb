@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.18)
+project(MiniDB VERSION 0.1.0 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_library(minidb_core src/bptree.cpp src/minidb.cpp src/sql.cpp)
+target_include_directories(minidb_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+if(MSVC)
+  target_compile_options(minidb_core PRIVATE /W4 /permissive-)
+else()
+  target_compile_options(minidb_core PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_executable(minidb src/main.cpp)
+target_link_libraries(minidb PRIVATE minidb_core)
+
+include(CTest)
+if(BUILD_TESTING)
+  add_executable(minidb_tests tests/test_minidb.cpp)
+  target_link_libraries(minidb_tests PRIVATE minidb_core)
+  add_test(NAME minidb_unit_tests COMMAND minidb_tests)
+  add_test(NAME minidb_cli_smoke COMMAND minidb --db cli_smoke.mdb --execute "SHOW TABLES;")
+endif()
+
+add_executable(minidb_bench benchmarks/bench.cpp)
+target_link_libraries(minidb_bench PRIVATE minidb_core)

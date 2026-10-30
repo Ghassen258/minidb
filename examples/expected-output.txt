@@ -1,0 +1,11 @@
+MiniDB demonstration (selected expected results)
+
+After the three initial INSERT statements:
+  SELECT * FROM engineers;           -> 3 rows
+  EXPLAIN SELECT ... WHERE id = 102; -> PLAN: B+ TREE PRIMARY KEY LOOKUP
+  SELECT name, team ... id = 102;    -> Grace Hopper | Systems
+
+After UPDATE and DELETE:
+  SELECT COUNT(*) FROM engineers;    -> 2
+  STATS;                             -> stored_versions = 4, index_keys = 3
+  COMPACT;                           -> stored_versions = 2, index_keys = 2
