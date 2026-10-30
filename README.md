@@ -6,6 +6,34 @@ No SQLite, database SDK, Boost, or third-party runtime dependencies are used.
 
 > **Educational scope:** MiniDB is a single-process prototype, **not** an ACID-compliant replacement for SQLite or PostgreSQL. Its B+ tree is **in memory** (rebuilt after restart), and its log format is a deliberately simple append-only format rather than a page-oriented storage engine.
 
+
+**[▶ Try the C++ engine in your browser](https://ghassen258.github.io/minidb/)** — WebAssembly SQL workbench, no installation required.
+
+## Browser edition (WebAssembly)
+
+The browser edition compiles the **same C++20 SQL parser, B+ tree and storage engine** using Emscripten, with a thin C++ bridge (`src/web_bridge.cpp`) and a zero-framework interface (`web/`). It supports SQL editing, table browsing, query results, `EXPLAIN` plans, and a ready-to-use demo dataset.
+
+Data is stored in Emscripten's in-memory filesystem during execution and serialized to browser `localStorage` where available. The database can be **exported as a native `.mdb` file** and imported back into the workbench. No queries or data are uploaded to a server. The browser edition limits snapshots to 2 MiB; use the native CLI for larger datasets. Browser local storage can be cleared by browser settings.
+
+Use **Ctrl/⌘ + Enter** to run one or several semicolon-separated queries. SQL features and limitations are the same as in the native engine.
+
+### Build the browser demo locally
+
+Install [Emscripten](https://emscripten.org/docs/getting_started/downloads.html), then run with its environment activated:
+
+```bash
+mkdir -p dist
+em++ -std=c++20 -O2 -Isrc src/bptree.cpp src/minidb.cpp src/sql.cpp src/web_bridge.cpp \
+  --bind --no-entry -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=web \
+  -s FORCE_FILESYSTEM=1 -s ALLOW_MEMORY_GROWTH=1 \
+  -o dist/minidb.mjs
+cp web/index.html web/style.css web/app.js dist/
+python -m http.server 8000 --directory dist
+```
+
+Open `http://localhost:8000`. GitHub Actions builds and deploys the same WebAssembly edition to Pages on each source update.
+
+
 ## Try it in 30 seconds
 
 **Prerequisites:** CMake ≥3.18 and a C++20 compiler (GCC ≥10, Clang ≥12, or recent MSVC).

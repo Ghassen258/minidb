@@ -1,0 +1,50 @@
+name: Build and deploy MiniDB web demo
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'web/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: minidb-pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: 4.0.19
+      - name: Compile MiniDB C++20 engine to WebAssembly
+        run: |
+          mkdir -p dist
+          em++ -std=c++20 -O2 -Isrc \
+            src/bptree.cpp src/minidb.cpp src/sql.cpp src/web_bridge.cpp \
+            --bind --no-entry -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=web \
+            -s FORCE_FILESYSTEM=1 -s ALLOW_MEMORY_GROWTH=1 -s ASSERTIONS=1 \
+            -o dist/minidb.mjs
+          cp web/index.html web/style.css web/app.js dist/
+          touch dist/.nojekyll
+          test -s dist/minidb.mjs
+          test -s dist/minidb.wasm
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
